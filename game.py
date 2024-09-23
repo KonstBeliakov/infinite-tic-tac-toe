@@ -80,7 +80,7 @@ class Game:
         print(self.moves)
 
     @lru_cache(None)
-    def min_max(self, depth, player_move, moves1, number_of_moves):  # returns best move and board evaluation
+    def min_max(self, depth, player_move, moves1, number_of_moves, alpha=float('-inf'), beta=float('inf')):
         for move in moves1:
             self.matrix[move[0]][move[1]] = move[2]
 
@@ -97,9 +97,9 @@ class Game:
                 return None, c
 
         moves = set()
-        for x, y, _ in chain(self.moves, moves1):
-            for dx in range(-1, 2, 1):
-                for dy in range(-1, 2, 1):
+        for x, y, _ in chain(moves1, self.moves[::-1]):
+            for dx in range(-1, 2):
+                for dy in range(-1, 2):
                     if not self.matrix[x + dx][y + dy]:
                         moves.add((x + dx, y + dy))
 
@@ -110,9 +110,19 @@ class Game:
         for move in moves:
             color = 1 if player_move else -1
             moves2 = list(moves1) + [(move[0], move[1], color)]
-            _, ev = self.min_max(depth-1, not player_move, frozenset(moves2), number_of_moves + 1)
+            _, ev = self.min_max(depth - 1, not player_move, frozenset(moves2), number_of_moves + 1, alpha, beta)
 
             moves_eval.append((move, ev))
+
+            # Alpha-beta pruning
+            if player_move:
+                alpha = max(alpha, ev)
+                if beta <= alpha:
+                    break
+            else:
+                beta = min(beta, ev)
+                if beta <= alpha:
+                    break
 
         if player_move:
             return max(moves_eval, key=lambda x: x[1])
