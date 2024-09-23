@@ -19,3 +19,48 @@ def evaluation(matrix: tuple):
             if matrix[x][y] and matrix[x][y] == matrix[x + 1][y - 1] == matrix[x + 2][y - 2] == matrix[x + 3][y - 3] == matrix[x + 4][y - 4]:
                 return matrix[x][y]
     return 0
+
+
+def check_game_over(matrix, last_move):
+    x, y, last_color = last_move
+
+    # checking horizontal
+    h1 = 0
+    while matrix[x + h1][y] == last_color:
+        h1 += 1
+    h2 = 0
+    while matrix[x - h2][y] == last_color:
+        h2 += 1
+    if h1 + h2 - 1 >= 5:
+        return True
+
+    # checking vertical
+    v1 = 0
+    while matrix[x][y + v1] == last_color:
+        v1 += 1
+    v2 = 0
+    while matrix[x][y - v2] == last_color:
+        v2 += 1
+    if v1 + v2 - 1 >= 5:
+        return True
+
+    # checking diagonal
+    d1 = 0
+    while matrix[x + d1][y + d1] == last_color:
+        d1 += 1
+    d2 = 0
+    while matrix[x - d2][y - d2] == last_color:
+        d2 += 1
+    if d1 + d2 - 1 >= 5:
+        return True
+
+    # checking second diagonal
+    d1_2 = 0
+    while matrix[x + d1_2][y - d1_2] == last_color:
+        d1_2 += 1
+    d2_2 = 0
+    while matrix[x - d2_2][y + d2_2] == last_color:
+        d2_2 += 1
+    if d1_2 + d2_2 - 1 >= 5:
+        return True
+    return False

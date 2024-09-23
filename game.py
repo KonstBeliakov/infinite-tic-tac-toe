@@ -1,5 +1,5 @@
 import copy
-import random
+from time import perf_counter
 import sys
 from functools import lru_cache
 
@@ -8,7 +8,7 @@ import pygame
 from threading import Thread
 from settings import *
 
-from utils import evaluation
+from utils import *
 
 
 class Game:
@@ -35,6 +35,8 @@ class Game:
 
         self.last_evaluation = 0
 
+        self.number_of_moves = 0
+
     def update(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -43,6 +45,8 @@ class Game:
             if self.player_move and event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = event.pos
                 self.matrix[mouse_x // CELL_SIZE][mouse_y // CELL_SIZE] = 1
+
+                self.number_of_moves += 1
 
                 self.player_move = False
                 t1 = Thread(target=self.computer_move)
@@ -66,23 +70,19 @@ class Game:
         pygame.display.flip()
 
     def computer_move(self):
-        '''x = random.randrange(MATRIX_SIZE_X)
-        y = random.randrange(MATRIX_SIZE_Y)
-        while self.matrix[x][y]:
-            x = random.randrange(MATRIX_SIZE_X)
-            y = random.randrange(MATRIX_SIZE_Y)
-        self.matrix[x][y] = -1'''
-
-        move, ev = self.min_max(RECURSION_DEPTH, False, ())
+        t = perf_counter()
+        move, ev = self.min_max(RECURSION_DEPTH, False, (), self.number_of_moves)
 
         print(move, ev)
+        print(perf_counter() - t)
 
         self.matrix[move] = -1
         self.last_evaluation = ev
 
         self.player_move = True
 
-    def min_max(self, depth, player_move, moves1):  # returns best move and board evaluation
+    @lru_cache(None)
+    def min_max(self, depth, player_move, moves1, number_of_moves):  # returns best move and board evaluation
         for move in moves1:
             self.matrix[move[0]][move[1]] = move[2]
 
@@ -91,6 +91,12 @@ class Game:
             for move in moves1:
                 self.matrix[move[0]][move[1]] = 0
             return None, t
+        '''
+        if any([check_game_over(self.matrix, move) for move in moves1]):
+        for move in moves1:
+            self.matrix[move[0]][move[1]] = 0
+        return None, (1 if self.player_move else -1)
+        '''
 
         moves = set()
         for x in range(1, MATRIX_SIZE_X - 1):
@@ -107,15 +113,14 @@ class Game:
         moves_eval = []
         for move in moves:
             color = 1 if player_move else -1
-            moves2 = list(copy.deepcopy(moves1)) + [(move[0], move[1], color)]
-            _, ev = self.min_max(depth-1, not player_move, moves2)
+            moves2 = list(moves1) + [(move[0], move[1], color)]
+            _, ev = self.min_max(depth-1, not player_move, frozenset(moves2), number_of_moves + 1)
 
             moves_eval.append((move, ev))
 
         if player_move:
             return max(moves_eval, key=lambda x: x[1])
-        else:
-            return min(moves_eval, key=lambda x: x[1])
+        return min(moves_eval, key=lambda x: x[1])
 
     def exit(self):
         pygame.quit()
