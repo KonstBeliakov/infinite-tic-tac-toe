@@ -15,8 +15,8 @@ from utils import *
 class Game:
     def __init__(self):
         pygame.init()
-        width, height = 800, 600
-        self.screen = pygame.display.set_mode((width, height))
+
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Tic-Tac-Toe")
 
         self.over = False
@@ -39,6 +39,11 @@ class Game:
 
         self.number_of_moves = 0
 
+        self.textures = [pygame.image.load('O.png'), pygame.image.load('X.png')]
+
+        self.textures[0] = pygame.transform.scale(self.textures[0], (CELL_SIZE, CELL_SIZE))
+        self.textures[1] = pygame.transform.scale(self.textures[1], (CELL_SIZE, CELL_SIZE))
+
     def update(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -51,20 +56,29 @@ class Game:
                 t1 = Thread(target=self.computer_move)
                 t1.start()
 
+    def draw_grid(self):
+        for i in range(SCREEN_HEIGHT // CELL_SIZE + 1):
+            pygame.draw.line(self.screen, (100, 100, 100), (0, i * CELL_SIZE),
+                             (SCREEN_WIDTH, i * CELL_SIZE), 1)
+
+        for i in range(SCREEN_WIDTH // CELL_SIZE + 1):
+            pygame.draw.line(self.screen, (100, 100, 100), (i * CELL_SIZE, 0),
+                             (i * CELL_SIZE, SCREEN_HEIGHT), 1)
+
     def draw(self):
         self.screen.fill((0, 0, 0))
+
+        self.draw_grid()
 
         for i in range(len(self.matrix)):
             for j in range(len(self.matrix[i])):
                 if self.matrix[i][j] == 1:
-                    pygame.draw.rect(self.screen, (100, 100, 255),
-                                     (i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                    self.screen.blit(self.textures[0], (i * CELL_SIZE, j * CELL_SIZE))
                 elif self.matrix[i][j] == -1:
-                    pygame.draw.rect(self.screen, (255, 100, 100),
-                                     (i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                    self.screen.blit(self.textures[1], (i * CELL_SIZE, j * CELL_SIZE))
 
-        text_surface = self.font.render(f'Evaluation: {self.last_evaluation}', True, (255, 255, 255))
-        self.screen.blit(text_surface, (50, 100))
+        #text_surface = self.font.render(f'Evaluation: {self.last_evaluation}', True, (255, 255, 255))
+        #self.screen.blit(text_surface, (50, 100))
 
         pygame.display.flip()
 
@@ -100,7 +114,7 @@ class Game:
         for x, y, _ in chain(moves1, self.moves[::-1]):
             for dx in range(-1, 2):
                 for dy in range(-1, 2):
-                    if not self.matrix[x + dx][y + dy]:
+                    if 0 <= x + dx < MATRIX_SIZE_X and 0 <= y + dy < MATRIX_SIZE_Y and not self.matrix[x + dx][y + dy]:
                         moves.add((x + dx, y + dy))
 
         for move in moves1:

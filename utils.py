@@ -32,7 +32,7 @@ def check_game_over(matrix, last_move):
     while x - h2 >= 0 and matrix[x - h2][y] == last_color:
         h2 += 1
     if h1 + h2 - 1 >= 5:
-        return 1 if last_color == 1 else -1
+        return 100 if last_color == 1 else -100
 
     # checking vertical
     v1 = 0
@@ -42,17 +42,17 @@ def check_game_over(matrix, last_move):
     while y - v2 >= 0 and matrix[x][y - v2] == last_color:
         v2 += 1
     if v1 + v2 - 1 >= 5:
-        return 1 if last_color == 1 else -1
+        return 100 if last_color == 1 else -100
 
     # checking diagonal
     d1 = 0
-    while x + d1 < MATRIX_SIZE_X and y + d1 < MATRIX_SIZE_X and matrix[x + d1][y + d1] == last_color:
+    while x + d1 < MATRIX_SIZE_X and y + d1 < MATRIX_SIZE_Y and matrix[x + d1][y + d1] == last_color:
         d1 += 1
     d2 = 0
     while x - d2 >= 0 and y - d2 >= 0 and matrix[x - d2][y - d2] == last_color:
         d2 += 1
     if d1 + d2 - 1 >= 5:
-        return 1 if last_color == 1 else -1
+        return 100 if last_color == 1 else -100
 
     # checking second diagonal
     d1_2 = 0
