@@ -44,6 +44,9 @@ class Game:
         self.textures[0] = pygame.transform.scale(self.textures[0], (CELL_SIZE, CELL_SIZE))
         self.textures[1] = pygame.transform.scale(self.textures[1], (CELL_SIZE, CELL_SIZE))
 
+        self.moves_number = 0
+        self.moves_processed = 0
+
     def update(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -70,6 +73,10 @@ class Game:
 
         self.draw_grid()
 
+        if self.moves:
+            x, y, _ = self.moves[-1]
+            pygame.draw.rect(self.screen, (25, 100, 25),(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+
         for i in range(len(self.matrix)):
             for j in range(len(self.matrix[i])):
                 if self.matrix[i][j] == 1:
@@ -78,7 +85,11 @@ class Game:
                     self.screen.blit(self.textures[1], (i * CELL_SIZE, j * CELL_SIZE))
 
         text_surface = self.font.render(f'Evaluation: {round(self.last_evaluation, 1)}', True, (255, 255, 255))
-        self.screen.blit(text_surface, (50, 100))
+        self.screen.blit(text_surface, (10, 10))
+
+        text_surface = self.font.render(f'Moves processed: {self.moves_processed}/{self.moves_number}',
+                                        True, (255, 255, 255))
+        self.screen.blit(text_surface, (10, 50))
 
         pygame.display.flip()
 
@@ -120,6 +131,10 @@ class Game:
         for move in moves1:
             self.matrix[move[0]][move[1]] = 0
 
+        if depth == RECURSION_DEPTH:
+            self.moves_number = len(moves)
+            self.moves_processed = 0
+
         moves_eval = []
         for move in moves:
             color = 1 if player_move else -1
@@ -137,6 +152,9 @@ class Game:
                 beta = min(beta, ev)
                 if beta <= alpha:
                     break
+
+            if depth == RECURSION_DEPTH:
+                self.moves_processed += 1
 
         if player_move:
             return max(moves_eval, key=lambda x: x[1])
