@@ -1,4 +1,5 @@
 import copy
+from itertools import chain
 from time import perf_counter
 import sys
 from functools import lru_cache
@@ -26,6 +27,7 @@ class Game:
         self.circle_radius = 20
 
         self.matrix = np.array([[0 for _ in range(MATRIX_SIZE_Y)] for _ in range(MATRIX_SIZE_X)])
+        self.moves = []
 
         self.active = []
 
@@ -44,11 +46,8 @@ class Game:
 
             if self.player_move and event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = event.pos
-                self.matrix[mouse_x // CELL_SIZE][mouse_y // CELL_SIZE] = 1
+                self.make_move(mouse_x // CELL_SIZE, mouse_y // CELL_SIZE, 1)
 
-                self.number_of_moves += 1
-
-                self.player_move = False
                 t1 = Thread(target=self.computer_move)
                 t1.start()
 
@@ -76,10 +75,9 @@ class Game:
         print(move, ev)
         print(perf_counter() - t)
 
-        self.matrix[move] = -1
-        self.last_evaluation = ev
+        self.make_move(*move, -1)
 
-        self.player_move = True
+        print(self.moves)
 
     @lru_cache(None)
     def min_max(self, depth, player_move, moves1, number_of_moves):  # returns best move and board evaluation
@@ -87,25 +85,23 @@ class Game:
             self.matrix[move[0]][move[1]] = move[2]
 
         if depth == 0:
-            t = evaluation(tuple([tuple(i) for i in self.matrix]))
+            t = any([check_game_over(self.matrix, move) for move in moves1])
             for move in moves1:
                 self.matrix[move[0]][move[1]] = 0
             return None, t
-        '''
-        if any([check_game_over(self.matrix, move) for move in moves1]):
+
         for move in moves1:
-            self.matrix[move[0]][move[1]] = 0
-        return None, (1 if self.player_move else -1)
-        '''
+            if c := check_game_over(self.matrix, move):
+                for move in moves1:
+                    self.matrix[move[0]][move[1]] = 0
+                return None, c
 
         moves = set()
-        for x in range(1, MATRIX_SIZE_X - 1):
-            for y in range(1, MATRIX_SIZE_Y - 1):
-                if self.matrix[x][y]:
-                    for dx in range(-1, 2, 1):
-                        for dy in range(-1, 2, 1):
-                            if not self.matrix[x + dx][y + dy]:
-                                moves.add((x + dx, y + dy))
+        for x, y, _ in chain(self.moves, moves1):
+            for dx in range(-1, 2, 1):
+                for dy in range(-1, 2, 1):
+                    if not self.matrix[x + dx][y + dy]:
+                        moves.add((x + dx, y + dy))
 
         for move in moves1:
             self.matrix[move[0]][move[1]] = 0
@@ -125,3 +121,10 @@ class Game:
     def exit(self):
         pygame.quit()
         sys.exit()
+
+    def make_move(self, x, y, color):
+        self.matrix[x][y] = color
+        self.moves.append((x, y, 1))
+        self.number_of_moves += 1
+
+        self.player_move = not self.player_move
