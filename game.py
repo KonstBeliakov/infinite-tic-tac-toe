@@ -77,21 +77,20 @@ class Game:
                 elif self.matrix[i][j] == -1:
                     self.screen.blit(self.textures[1], (i * CELL_SIZE, j * CELL_SIZE))
 
-        #text_surface = self.font.render(f'Evaluation: {self.last_evaluation}', True, (255, 255, 255))
-        #self.screen.blit(text_surface, (50, 100))
+        text_surface = self.font.render(f'Evaluation: {round(self.last_evaluation, 1)}', True, (255, 255, 255))
+        self.screen.blit(text_surface, (50, 100))
 
         pygame.display.flip()
 
     def computer_move(self):
         t = perf_counter()
         move, ev = self.min_max(RECURSION_DEPTH, False, (), self.number_of_moves)
+        self.last_evaluation = ev
 
         print(move, ev)
         print(perf_counter() - t)
 
         self.make_move(*move, -1)
-
-        print(self.moves)
 
     @lru_cache(None)
     def min_max(self, depth, player_move, moves1, number_of_moves, alpha=float('-inf'), beta=float('inf')):
@@ -99,13 +98,14 @@ class Game:
             self.matrix[move[0]][move[1]] = move[2]
 
         if depth == 0:
-            t = any([check_game_over(self.matrix, move) for move in moves1])
+            t = sum([check_game_over(self.matrix, move) for move in moves1])
             for move in moves1:
                 self.matrix[move[0]][move[1]] = 0
             return None, t
 
         for move in moves1:
-            if c := check_game_over(self.matrix, move):
+            c = check_game_over(self.matrix, move)
+            if abs(c) >= 100:
                 for move in moves1:
                     self.matrix[move[0]][move[1]] = 0
                 return None, c
